@@ -1,0 +1,26 @@
+<!DOCTYPE HTML>
+<html>
+<head th:replace="./template/head.html::headFragment"></head>
+<body>
+<div id="app">
+    <el-container>
+        <el-header>
+            <div th:replace="./template/nav.html::navMenu"></div>
+        </el-header>
+        <el-main>
+            <h3>欢迎进入进销存管理系统</h3>
+        </el-main>
+    </el-container>
+</div>
+</body>
+<script>
+    var vm = new Vue ({
+        el :'#app',
+        data() {
+            return {
+
+            };
+        }
+    });
+</script>
+</html>

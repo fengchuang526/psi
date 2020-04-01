@@ -1,0 +1,37 @@
+server:
+  port: 8080
+  servlet:
+    session:
+      timeout: 1800m
+    context-path:
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/psi
+    driver-class-name: com.mysql.jdbc.Driver
+    username: root
+    password: root
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  thymeleaf:
+    cache: false
+    enabled: true
+    encoding: UTF-8
+    prefix: classpath:/templates/
+    check-template: true
+    check-template-location: true
+    mode: HTML
+    suffix: .html
+    servlet:
+      content-type: text/html
+  jackson:
+    date-format: yyyy-MM-dd
+    time-zone: GMT+8
+
+security:
+  username: admin
+  password: admin
+  loginPage: /home.action
+  failureUrl: /home.action
+  logoutUrl: /logout.action

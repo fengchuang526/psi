@@ -1,0 +1,19 @@
+<div id="nav" th:fragment="navMenu">
+    <el-menu class="el-menu-demo" mode="horizontal" active-text-color="#70DB93">
+        <el-menu-item index="1">
+            <a th:href="@{/typeManage.action}">类型管理</a>
+        </el-menu-item>
+        <el-menu-item index="2">
+            <a th:href="@{/inventoryManage.action}">库存管理</a>
+        </el-menu-item>
+        <el-menu-item index="3">
+            <a th:href="@{/saleManage.action}">销售管理</a>
+        </el-menu-item>
+        <el-menu-item index="4">
+            <a th:href="@{/inManage.action}">采购管理</a>
+        </el-menu-item>
+        <el-menu-item index="5">
+            <a th:href="@{/statQueryIndex.action}">统计查询</a>
+        </el-menu-item>
+    </el-menu>
+</div>

@@ -1,0 +1,280 @@
+<!DOCTYPE HTML>
+<html>
+<head th:replace="./template/head.html::headFragment"></head>
+<style>
+    .el-row {
+        margin-bottom: 5px;
+    &:last-child {
+         margin-bottom: 0;
+     }
+    }
+</style>
+<body>
+<div id="app">
+    <el-container>
+        <el-header style="margin-bottom: 10px;">
+            <el-row><el-col :span="24"><div th:replace="./template/nav.html::navMenu"></div></el-col></el-row>
+            <el-row><el-col :span="24"><div style="font-size: medium;font-family:Microsoft YaHei;">您所在的位置：类型管理</div></el-col></el-row>
+        </el-header>
+        <el-main>
+            <el-row>
+                <el-col :span="12">
+                    <el-button type="primary" size="medium" @click="addBtn">新增</el-button>
+                    <el-button type="primary" size="medium" @click="updateBtn">修改</el-button>
+                    <el-button type="primary" size="medium" @click="deleteBtn">删除</el-button>
+                </el-col>
+                <el-col :span="12">
+                    <el-button type="primary" size="medium" @click="addChildBtn">新增</el-button>
+                    <el-button type="primary" size="medium" @click="updateChildBtn">修改</el-button>
+                    <el-button type="primary" size="medium" @click="deleteChildBtn">删除</el-button>
+                </el-col>
+            </el-row>
+            <el-row>
+                <el-col :span="12"><el-tag>大类</el-tag></el-col>
+                <el-col :span="12"><el-tag>小类</el-tag></el-col>
+            </el-row>
+            <el-row>
+                <el-col :span="10">
+                    <template>
+                        <el-table
+                                ref="parentTable"
+                                :data="parentTableData"
+                                highlight-current-row
+                                @current-change="handleCurrentChange"
+                                style="width: 100%">
+                            <el-table-column
+                                    type="index"
+                                    width="50">
+                            </el-table-column>
+                            <el-table-column
+                                    property="id" v-if="false">
+                            </el-table-column>
+                            <el-table-column
+                                    property="typeCode"
+                                    label="类型编码"
+                                    width="120">
+                            </el-table-column>
+                            <el-table-column
+                                    property="typeName"
+                                    label="类型名称"
+                                    width="120">
+                            </el-table-column>
+                            <el-table-column
+                                    property="typeDesc"
+                                    label="类型描述">
+                            </el-table-column>
+                        </el-table>
+                    </template>
+                </el-col>
+                <el-col :span="10" :offset="2">
+                    <template>
+                        <el-table
+                                ref="childTable"
+                                :data="childTableData"
+                                highlight-current-row
+                                @current-change="handleChange"
+                                style="width: 100%">
+                            <el-table-column
+                                    type="index"
+                                    width="50">
+                            </el-table-column>
+                            <el-table-column
+                                    property="id" v-if="false">
+                            </el-table-column>
+                            <el-table-column
+                                    property="pId" v-if="false">
+                            </el-table-column>
+                            <el-table-column
+                                    property="typeCode"
+                                    label="类型编码"
+                                    width="120">
+                            </el-table-column>
+                            <el-table-column
+                                    property="typeName"
+                                    label="类型名称"
+                                    width="120">
+                            </el-table-column>
+                            <el-table-column
+                                    property="typeDesc"
+                                    label="类型描述">
+                            </el-table-column>
+                        </el-table>
+                    </template>
+                </el-col>
+            </el-row>
+            <!--弹出框-->
+            <el-dialog title="编辑类型" :visible.sync="dialogFormVisible">
+                <el-form :model="typeForm" :rules="rules" ref="typeForm">
+                    <el-form-item label="ID" hidden="true" :label-width="formLabelWidth">
+                        <el-input name="id" v-model="typeForm.id" autocomplete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="类型编码" :label-width="formLabelWidth" prop="typeCode">
+                        <el-input name="typeCode" v-model="typeForm.typeCode" autocomplete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="类型名称" :label-width="formLabelWidth" prop="typeName">
+                        <el-input name="typeName" v-model="typeForm.typeName" autocomplete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="类型描述" :label-width="formLabelWidth">
+                        <el-input name="typeDesc" v-model="typeForm.typeDesc" autocomplete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="父类ID" hidden="true" :label-width="formLabelWidth">
+                        <el-input name="pId" v-model="typeForm.pId" autocomplete="off"></el-input>
+                    </el-form-item>
+                </el-form>
+                <div slot="footer" class="dialog-footer">
+                    <el-button @click="dialogFormVisible = false">取 消</el-button>
+                    <el-button type="primary" @click="typeFormSubmit('typeForm')">确 定</el-button>
+                </div>
+            </el-dialog>
+
+        </el-main>
+    </el-container>
+</div>
+</body>
+<script>
+    var vm = new Vue ({
+        el :'#app',
+        data() {
+            return {
+                parentTableData: [],
+                childTableData : [],
+                dialogFormVisible : false,
+                formLabelWidth: '100px',
+                typeForm : {
+                    id: '',
+                    typeCode : '',
+                    typeName : '',
+                    typeDesc : '',
+                    pId:''
+                },
+                rules : {
+                    typeCode : [
+                        {required: true, message: '请输入类型编码', trigger: 'blur'}
+                    ],
+                    typeName : [
+                        {required: true, message: '请输入类型名称', trigger: 'blur'}
+                    ]
+                },
+                parentCurrentRow : null,
+                childCurrentRow : null
+            };
+        },
+        methods : {
+            typeFormSubmit(formName){
+                this.$refs[formName].validate((valid) => {
+                    if(valid){
+                        this.$http.post('/psi/type/editType.action',{data : JSON.stringify(this.typeForm)},{emulateJSON:true}).then(function(res){
+                            this.$message('编辑成功！');
+                            this.dialogFormVisible = false;
+                            this.$refs[formName].resetFields();
+                            window.location.reload();
+                        },function(res){
+                            this.$message('编辑失败！');
+                            this.dialogFormVisible = false;
+                            this.$refs[formName].resetFields();
+                        });
+                    }
+                });
+            },
+            handleCurrentChange(val) {
+                this.parentCurrentRow = val;
+                this.$http.post('/psi/type/findType.action',{pId : val.id},{emulateJSON:true}).then(function(res){
+                    this.childTableData = JSON.parse(res.bodyText);
+                },function(res){
+                    this.$message('查询失败！');
+                });
+            },
+            handleChange(val) {
+                this.childCurrentRow = val;
+            },
+            addBtn(){
+                this.dialogFormVisible = true;
+            },
+            updateBtn(){
+                if(this.parentCurrentRow == null){
+                    this.$message('请先选择一条大类记录！');
+                    return false;
+                }
+                this.typeForm.id = this.parentCurrentRow.id;
+                this.typeForm.typeCode = this.parentCurrentRow.typeCode;
+                this.typeForm.typeName = this.parentCurrentRow.typeName;
+                this.typeForm.typeDesc = this.parentCurrentRow.typeDesc;
+            },
+            deleteBtn(){
+                this.$confirm('此操作将永久删除, 是否继续?', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    if(this.parentCurrentRow == null){
+                    this.$message('请先选择一条大类记录！');
+                        return false;
+                    }
+                    this.$http.post('/psi/type/deleteType.action',{id : this.parentCurrentRow.id},{emulateJSON:true}).then(function(res){
+                        window.location.reload();
+                        this.$message('删除成功！');
+                    },function(res){
+                        this.$message('删除失败！');
+                    });
+                }).catch(() => {
+                        this.$message({
+                        type: 'info',
+                        message: '已取消删除'
+                    });
+                });
+            },
+            addChildBtn(){
+                if(this.parentCurrentRow == null){
+                    this.$message('请先选择一条大类记录！');
+                    return false;
+                }
+                this.dialogFormVisible = true;
+                this.typeForm.pId = this.parentCurrentRow.id;
+            },
+            updateChildBtn(){
+                if(this.childCurrentRow == null){
+                    this.$message('请先选择一条小类记录！');
+                    return false;
+                }
+                this.dialogFormVisible = true;
+                this.typeForm.id = this.childCurrentRow.id;
+                this.typeForm.pId = this.childCurrentRow.pId;
+                this.typeForm.typeCode = this.childCurrentRow.typeCode;
+                this.typeForm.typeName = this.childCurrentRow.typeName;
+                this.typeForm.typeDesc = this.childCurrentRow.typeDesc;
+            },
+            deleteChildBtn(){
+                this.$confirm('此操作将永久删除, 是否继续?', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    if(this.childCurrentRow == null){
+                    this.$message('请先选择一条小类记录！');
+                        return false;
+                    }
+                    this.$http.post('/psi/type/deleteType.action',{id : this.childCurrentRow.id},{emulateJSON:true}).then(function(res){
+                        window.location.reload();
+                        this.$message('删除成功！');
+                    },function(res){
+                        this.$message('删除失败！');
+                    });
+                }).catch(() => {
+                        this.$message({
+                        type: 'info',
+                        message: '已取消删除'
+                    });
+                });
+            }
+        }
+    });
+    /*界面渲染完后事件*/
+    vm.$nextTick(function(){
+        this.$http.post('/psi/type/findType.action').then(function(res){
+            this.parentTableData = JSON.parse(res.bodyText);
+        },function(res){
+            this.$message('请重新进入界面！');
+        });
+    });
+</script>
+</html>

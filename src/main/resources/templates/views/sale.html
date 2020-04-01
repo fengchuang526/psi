@@ -1,0 +1,339 @@
+<!DOCTYPE HTML>
+<html>
+<head th:replace="./template/head.html::headFragment"></head>
+<body>
+<div id="app">
+    <el-container>
+        <el-header style="margin-bottom: 10px;">
+            <el-row><el-col :span="24"><div th:replace="./template/nav.html::navMenu"></div></el-col></el-row>
+            <el-row><el-col :span="24"><div style="font-size: medium;font-family:Microsoft YaHei;">您所在的位置：销售管理</div></el-col></el-row>
+        </el-header>
+        <el-main>
+            <!--查询表单-->
+            <el-row>
+                <el-col>
+                    <el-form :inline="true" :model="formInline" class="demo-form-inline">
+                        <el-form-item label="所属类型">
+                            <el-select name="typeId" v-model="formInline.typeId" placeholder="所属类型">
+                                <el-option v-for="type in types" :key="type.id" :value="type.id" :label="type.typeName"></el-option>
+                            </el-select>
+                        </el-form-item>
+                        <el-form-item label="物品编码">
+                            <el-input v-model="formInline.goodsCode" name="goodsCode" placeholder="物品编码"></el-input>
+                        </el-form-item>
+                        <el-form-item label="物品名称">
+                            <el-input v-model="formInline.goodsName" name="goodsName" placeholder="物品名称"></el-input>
+                        </el-form-item>
+                        <el-form-item label="流水标识" v-if="false">
+                            <el-input v-model="formInline.runFlag" name="runFlag" placeholder="流水标识"></el-input>
+                        </el-form-item>
+                        <el-form-item label="商家编码">
+                            <el-input v-model="formInline.merchantCode" name="merchantCode" placeholder="商家编码"></el-input>
+                        </el-form-item>
+                        <el-form-item label="商家名称">
+                            <el-input v-model="formInline.merchantName" name="merchantName" placeholder="商家名称"></el-input>
+                        </el-form-item>
+                    </el-form>
+                </el-col>
+            </el-row>
+            <!--按钮行-->
+            <el-row>
+                <el-col>
+                    <el-button type="primary" size="medium" @click="searchBtn">查询</el-button>
+                    <el-button type="primary" size="medium" @click="addInven">新增</el-button>
+                    <el-button type="primary" size="medium" @click="updateInven">修改</el-button>
+                    <el-button type="primary" size="medium" @click="deleteInven">删除</el-button>
+                </el-col>
+            </el-row>
+            <!--数据表格-->
+            <el-row>
+                <el-col>
+                    <template>
+                        <el-table
+                                ref="invenTable"
+                                :data="invenTableData"
+                                highlight-current-row
+                                @current-change="handleCurrentChange"
+                                style="width: 100%">
+                            <el-table-column
+                                    type="index"
+                                    width="50">
+                            </el-table-column>
+                            <el-table-column
+                                    property="id" v-if="false">
+                            </el-table-column>
+                            <el-table-column
+                                    property="goodsId"
+                                    label="物品名称"
+                                    width="120"
+                                    :formatter="formatterGoodsId">
+                            </el-table-column>
+                            <el-table-column
+                                    property="runFlag"
+                                    v-if="false">
+                            </el-table-column>
+                            <el-table-column
+                                    property="runNum"
+                                    label="销售数量"
+                                    width="120">
+                            </el-table-column>
+                            <el-table-column
+                                    property="merchantCode"
+                                    label="商家名称"
+                                    :formatter="formatterMerchantCode">
+                            </el-table-column>
+                            <el-table-column
+                                    property="goodsUnit"
+                                    label="单位"
+                                    :formatter="formatterUnit">
+                            </el-table-column>
+                            <el-table-column
+                                    property="goodsPrice"
+                                    label="单价">
+                            </el-table-column>
+                            <el-table-column
+                                    property="totalAmt"
+                                    label="总额">
+                            </el-table-column>
+                            <el-table-column
+                                    property="createDate"
+                                    label="交易时间"
+                                    :formatter="formatterCreateDate">
+                            </el-table-column>
+                            <el-table-column
+                                    property="updateDate"
+                                    label="更新时间"
+                                    :formatter="formatterUpdateDate">
+                            </el-table-column>
+                        </el-table>
+                    </template>
+                </el-col>
+            </el-row>
+
+            <!--弹出框-->
+            <el-dialog title="销售流水" :visible.sync="invenDialogShow">
+                <el-form :model="invenForm" :rules="invenRules" ref="invenForm">
+                    <el-form-item label="ID" hidden="true">
+                        <el-input name="id" v-model="invenForm.id" autocomplete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="物品名称" :label-width="formLabelWidth" prop="goodsId">
+                        <el-select name="goodsId" v-model="invenForm.goodsId" placeholder="物品名称">
+                            <el-option v-for="g in goods" :key="g.id" :value="g.id" :label="g.goodsName"></el-option>
+                        </el-select>
+                    </el-form-item>
+                    <el-form-item label="流水标识" hidden="true">
+                        <el-input name="runFlag" v-model="invenForm.runFlag" autocomplete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="销售数量" :label-width="formLabelWidth" prop="runNum">
+                        <el-input-number name="runNum" v-model="invenForm.runNum" :precision="2" :step="0.1" @change="calcTotalAmt"></el-input-number>
+                    </el-form-item>
+                    <el-form-item label="商家名称" :label-width="formLabelWidth" prop="merchantCode">
+                        <el-select name="merchantCode" v-model="invenForm.merchantCode" placeholder="商家名称">
+                            <el-option v-for="m in merchant" :key="m.typeCode" :value="m.typeCode" :label="m.typeName"></el-option>
+                        </el-select>
+                    </el-form-item>
+                    <el-form-item label="物品单位" :label-width="formLabelWidth">
+                        <el-select name="goodsUnit" v-model="invenForm.goodsUnit" placeholder="物品单位">
+                            <el-option v-for="unit in goodsUnits" :key="unit.typeCode" :value="unit.typeCode" :label="unit.typeName"></el-option>
+                        </el-select>
+                    </el-form-item>
+                    <el-form-item label="物品单价" :label-width="formLabelWidth" prop="goodsPrice">
+                        <el-input-number name="goodsPrice" v-model="invenForm.goodsPrice" :precision="2" :step="0.1" @change="calcTotalAmt"></el-input-number>
+                    </el-form-item>
+                    <el-form-item label="总额" :label-width="formLabelWidth">
+                        <el-input-number disabled="true" name="totalAmt" v-model="invenForm.totalAmt" :precision="2" :step="0.1"></el-input-number>
+                    </el-form-item>
+                    <el-form-item label="交易时间" :label-width="formLabelWidth" prop="createDate">
+                        <el-date-picker v-model="invenForm.createDate" type="date" placeholder="选择日期" format="yyyy年MM月dd日" value-format="yyyy-MM-dd"></el-date-picker>
+                    </el-form-item>
+                </el-form>
+                <div slot="footer" class="dialog-footer">
+                    <el-button @click="invenDialogShow = false">取 消</el-button>
+                    <el-button type="primary" @click="invenFormSubmit('invenForm')">确 定</el-button>
+                </div>
+            </el-dialog>
+
+        </el-main>
+    </el-container>
+</div>
+</body>
+<script>
+    var vm = new Vue ({
+        el :'#app',
+        data() {
+            return {
+                formInline : {
+                    typeId : '',
+                    goodsCode : '',
+                    goodsName : '',
+                    runFlag : 'OUT',
+                    merchantName:'',
+                    merchantCode:''
+                },
+                types : [],
+                invenTableData : [],
+                tableCurrentRow : null,
+                invenDialogShow : false,
+                formLabelWidth : '100px',
+                goodsUnits : [],
+                goods : [],
+                merchant : [],
+                invenForm : {
+                    id : '',
+                    goodsId : '',
+                    runFlag : 'OUT',
+                    runNum : '',
+                    merchantCode : '',
+                    goodsUnit : '',
+                    goodsPrice : '',
+                    totalAmt : '',
+                    createDate : ''
+                },
+                invenRules : {
+                    goodsId : [
+                        {required: true, message: '请选择物品名称！', trigger: 'blur'}
+                    ],
+                    runNum : [
+                        {required: true, message: '请输入销售数量!', trigger: 'blur'}
+                    ],
+                    merchantCode : [
+                        {required: true, message: '请选择商家名称!', trigger: 'blur'}
+                    ],
+                    goodsPrice : [
+                        {required: true, message: '请输入商品单价!', trigger: 'blur'}
+                    ],
+                    createDate : [
+                        {required: true, message: '请选择交易日期!', trigger: 'blur'}
+                    ]
+                }
+            };
+        },
+        methods : {
+            invenFormSubmit(formName){
+                this.$refs[formName].validate((valid) => {
+                    if(valid){
+                        this.$http.post('/psi/invenInfo/saveInvenInfo.action',{data : JSON.stringify(this.invenForm)},{emulateJSON:true}).then(function(res){
+                            this.$message('保存成功！');
+                            this.invenDialogShow = false;
+                            this.$refs[formName].resetFields();
+                            window.location.reload();
+                        },function(res){
+                            this.$message('保存失败！');
+                            this.invenDialogShow = false;
+                            this.$refs[formName].resetFields();
+                        });
+                    }
+                });
+            },
+            addInven(){
+                this.invenDialogShow = true;
+            },
+            updateInven(){
+                this.invenDialogShow = true;
+                this.invenForm = this.tableCurrentRow;
+            },
+            deleteInven(){
+                if(this.tableCurrentRow == null || this.tableCurrentRow == ''){
+                    this.$message({
+                        type: 'info',
+                        message: '请先选择一条记录！'
+                    });
+                    return false;
+                }
+                this.$confirm('此操作将永久删除, 是否继续?', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    this.$http.post('/psi/invenInfo/deleteInvenInfo.action',{id : this.tableCurrentRow.id},{emulateJSON:true}).then(function(res){
+                    this.$message({message:'删除成功！',type:'success'});
+                    window.location.reload();
+                },function(res){
+                    this.$message('删除失败！');
+                });
+            }).catch(() => {
+                    this.$message({
+                    type: 'info',
+                    message: '已取消删除'
+                });
+            });
+            },
+            handleCurrentChange(val){
+                this.tableCurrentRow = val;
+            },
+            searchBtn(){
+                this.$http.post('/psi/invenInfo/findInvenInfoCondition.action',{data : JSON.stringify(this.formInline)},{emulateJSON:true}).then(function(res){
+                    this.invenTableData = JSON.parse(res.bodyText).invenInitData;
+                },function(res){
+                    this.$message('查询失败！');
+                });
+            },
+            formatterUnit(row, column, cellValue, index){
+                var result = null;
+                for(var i=0;i<this.goodsUnits.length;i++){
+                    if(this.goodsUnits[i].typeCode == cellValue){
+                        result = this.goodsUnits[i].typeName;
+                        break;
+                    }
+                }
+                return result;
+            },
+            formatterGoodsId(row, column, cellValue, index){
+                var result = null;
+                for(var i=0;i<this.goods.length;i++){
+                    if(this.goods[i].id == cellValue){
+                        result = this.goods[i].goodsName;
+                        break;
+                    }
+                }
+                return result;
+            },
+            formatterMerchantCode(row, column, cellValue, index){
+                var result = null;
+                for(var i=0;i<this.merchant.length;i++){
+                    if(this.merchant[i].typeCode == cellValue){
+                        result = this.merchant[i].typeName;
+                        break;
+                    }
+                }
+                return result;
+            },
+            formatterCreateDate(row, column, cellValue, index){
+                if(cellValue instanceof Date){
+                    var createDate = new Date(cellValue.time);
+                    return createDate.getFullYear() + '-' + (createDate.getMonth() + 1) + '-' +createDate.getDate();
+                }else{
+                    return cellValue;
+                }
+
+            },
+            formatterUpdateDate(row, column, cellValue, index){
+                if(cellValue instanceof Date){
+                    var createDate = new Date(cellValue.time);
+                    return createDate.getFullYear() + '-' + (createDate.getMonth() + 1) + '-' +createDate.getDate();
+                }else{
+                    return cellValue;
+                }
+            },
+            calcTotalAmt(value){
+                this.invenForm.totalAmt = this.invenForm.runNum * this.invenForm.goodsPrice;
+            }
+        }
+    });
+
+    /*界面渲染完后事件*/
+    vm.$nextTick(function(){
+        this.$http.post('/psi/invenInfo/invenInfoInit.action',{runFlag:this.formInline.runFlag},{emulateJSON:true}).then(function(res){
+            const initData = JSON.parse(res.bodyText);
+            this.types = initData.data.goodsType;
+            this.goodsUnits = initData.data.UNIT;
+            this.isUse = initData.data.YN;
+            this.invenTableData = initData.invenInitData;
+            this.goods = initData.data.goods;
+            this.merchant = initData.data.buyer;
+        },function(res){
+            this.$message('请重新进入界面！');
+        });
+    });
+</script>
+</html>

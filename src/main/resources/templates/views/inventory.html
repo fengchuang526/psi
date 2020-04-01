@@ -1,0 +1,289 @@
+<!DOCTYPE HTML>
+<html>
+<head th:replace="./template/head.html::headFragment"></head>
+<body>
+<div id="app">
+    <el-container>
+        <el-header style="margin-bottom: 10px;">
+            <el-row><el-col :span="24"><div th:replace="./template/nav.html::navMenu"></div></el-col></el-row>
+            <el-row><el-col :span="24"><div style="font-size: medium;font-family:Microsoft YaHei;">您所在的位置： 库存管理</div></el-col></el-row>
+        </el-header>
+        <el-main>
+            <!--查询表单-->
+            <el-row>
+                <el-col>
+                    <el-form :inline="true" :model="formInline" class="demo-form-inline">
+                        <el-form-item label="所属类型">
+                            <el-select name="typeId" v-model="formInline.typeId" placeholder="所属类型">
+                                <el-option v-for="type in types" :key="type.id" :value="type.id" :label="type.typeName"></el-option>
+                            </el-select>
+                        </el-form-item>
+                        <el-form-item label="物品编码">
+                            <el-input v-model="formInline.goodsCode" name="goodsCode" placeholder="物品编码"></el-input>
+                        </el-form-item>
+                        <el-form-item label="物品名称">
+                            <el-input v-model="formInline.goodsName" name="goodsName" placeholder="物品名称"></el-input>
+                        </el-form-item>
+                    </el-form>
+                </el-col>
+            </el-row>
+            <!--按钮行-->
+            <el-row>
+                <el-col>
+                    <el-button type="primary" size="medium" @click="searchBtn">查询</el-button>
+                    <el-button type="primary" size="medium" @click="addInven">新增</el-button>
+                    <el-button type="primary" size="medium" @click="updateInven">修改</el-button>
+                    <el-button type="primary" size="medium" @click="deleteInven">删除</el-button>
+                </el-col>
+            </el-row>
+            <!--数据表格-->
+            <el-row>
+                <el-col>
+                    <template>
+                        <el-table
+                                ref="invenTable"
+                                :data="invenTableData"
+                                highlight-current-row
+                                @current-change="handleCurrentChange"
+                                style="width: 100%">
+                            <el-table-column
+                                    type="index"
+                                    width="50">
+                            </el-table-column>
+                            <el-table-column
+                                    property="id" v-if="false">
+                            </el-table-column>
+                            <el-table-column
+                                    property="typeId" v-if="false">
+                            </el-table-column>
+                            <el-table-column
+                                    property="goodsName"
+                                    label="物品名称"
+                                    width="120">
+                            </el-table-column>
+                            <el-table-column
+                                    property="goodsCode"
+                                    label="物品编码"
+                                    width="120">
+                            </el-table-column>
+                            <el-table-column
+                                    property="goodsDesc"
+                                    label="物品描述">
+                            </el-table-column>
+                            <el-table-column
+                                    property="goodsUnit"
+                                    label="单位"
+                                    :formatter="formatterUnit">
+                            </el-table-column>
+                            <el-table-column
+                                    property="goodsNum"
+                                    label="数量">
+                            </el-table-column>
+                            <el-table-column
+                                    property="goodsInPrice"
+                                    label="进价">
+                            </el-table-column>
+                            <el-table-column
+                                    property="goodsOutPrice"
+                                    label="单价">
+                            </el-table-column>
+                            <el-table-column
+                                    property="remark"
+                                    label="备注">
+                            </el-table-column>
+                            <el-table-column
+                                    property="isUse"
+                                    label="是否可用"
+                                    :formatter="formatterIsUse">
+                            </el-table-column>
+                        </el-table>
+                    </template>
+                </el-col>
+            </el-row>
+
+            <!--弹出框-->
+            <el-dialog title="编辑物品" :visible.sync="goodsDialogShow">
+                <el-form :model="goodsForm" :rules="goodsRules" ref="goodsForm">
+                    <el-form-item label="ID" hidden="true">
+                        <el-input name="id" v-model="goodsForm.id" autocomplete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="所属类型" :label-width="formLabelWidth">
+                        <el-select name="typeId" v-model="goodsForm.typeId" prop="typeId" placeholder="所属类型">
+                            <el-option v-for="type in types" :key="type.id" :value="type.id" :label="type.typeName"></el-option>
+                        </el-select>
+                    </el-form-item>
+                    <el-form-item label="物品编码" :label-width="formLabelWidth" prop="goodsCode">
+                        <el-input name="goodsCode" v-model="goodsForm.goodsCode" autocomplete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="物品名称" :label-width="formLabelWidth" prop="goodsName">
+                        <el-input name="goodsName" v-model="goodsForm.goodsName" autocomplete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="物品描述" :label-width="formLabelWidth">
+                        <el-input name="goodsDesc" v-model="goodsForm.goodsDesc" autocomplete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="物品单位" :label-width="formLabelWidth">
+                        <el-select name="goodsUnit" v-model="goodsForm.goodsUnit" placeholder="物品单位">
+                            <el-option v-for="unit in goodsUnits" :key="unit.typeCode" :value="unit.typeCode" :label="unit.typeName"></el-option>
+                        </el-select>
+                    </el-form-item>
+                    <el-form-item label="物品数量" :label-width="formLabelWidth">
+                        <el-input-number name="goodsNum" v-model="goodsForm.goodsNum" :precision="2" :step="0.1" :max="10"></el-input-number>
+                    </el-form-item>
+                    <el-form-item label="物品进价" :label-width="formLabelWidth">
+                        <el-input-number name="goodsInPrice" v-model="goodsForm.goodsInPrice" :precision="2" :step="0.1" :max="10"></el-input-number>
+                    </el-form-item>
+                    <el-form-item label="物品单价" :label-width="formLabelWidth">
+                        <el-input-number name="goodsOutPrice" v-model="goodsForm.goodsOutPrice" :precision="2" :step="0.1" :max="10"></el-input-number>
+                    </el-form-item>
+                    <el-form-item label="备注" :label-width="formLabelWidth">
+                        <el-input name="remark" v-model="goodsForm.remark" autocomplete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="是否可用" :label-width="formLabelWidth">
+                        <el-select name="isUse" v-model="goodsForm.isUse" placeholder="是否可用">
+                            <el-option v-for="obj in isUse" :key="obj.typeCode" :value="obj.typeCode" :label="obj.typeName"></el-option>
+                        </el-select>
+                    </el-form-item>
+                </el-form>
+                <div slot="footer" class="dialog-footer">
+                    <el-button @click="goodsDialogShow = false">取 消</el-button>
+                    <el-button type="primary" @click="goodsFormSubmit('goodsForm')">确 定</el-button>
+                </div>
+            </el-dialog>
+
+        </el-main>
+    </el-container>
+</div>
+</body>
+<script>
+    var vm = new Vue ({
+        el :'#app',
+        data() {
+            return {
+                formInline : {
+                    typeId : null,
+                    goodsCode : '',
+                    goodsName : ''
+                },
+                types : [],
+                invenTableData : [],
+                tableCurrentRow : null,
+                goodsDialogShow : false,
+                formLabelWidth : '100px',
+                goodsUnits : [],
+                isUse : [],
+                goodsForm : {
+                    id : null,
+                    typeId : null,
+                    goodsCode : null,
+                    goodsName : null,
+                    goodsDesc : null,
+                    goodsUnit : null,
+                    goodsNum : null,
+                    goodsInPrice : null,
+                    goodsOutPrice : null,
+                    remark : null,
+                    isUse : null
+                },
+                goodsRules : {
+                    typeId : [
+                        {required: true, message: '请选择所属类型！', trigger: 'blur'}
+                    ],
+                    goodsCode : [
+                        {required: true, message: '请输入物品编码!', trigger: 'blur'}
+                    ],
+                    goodsName : [
+                        {required: true, message: '请输入物品名称!', trigger: 'blur'}
+                    ]
+                }
+            };
+        },
+        methods : {
+            goodsFormSubmit(formName){
+                this.$refs[formName].validate((valid) => {
+                    if(valid){
+                        this.$http.post('/psi/goods/editGoodsInfo.action',{data : JSON.stringify(this.goodsForm)},{emulateJSON:true}).then(function(res){
+                            this.$message('编辑成功！');
+                            this.goodsDialogShow = false;
+                            this.$refs[formName].resetFields();
+                            window.location.reload();
+                        },function(res){
+                            this.$message('编辑失败！');
+                            this.goodsDialogShow = false;
+                            this.$refs[formName].resetFields();
+                        });
+                    }
+                });
+            },
+            addInven(){
+                this.goodsDialogShow = true;
+            },
+            updateInven(){
+                this.goodsDialogShow = true;
+                this.goodsForm = this.tableCurrentRow;
+            },
+            deleteInven(){
+                this.$confirm('此操作将永久删除, 是否继续?', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    this.$http.post('/psi/goods/deleteGoods.action',{id : this.tableCurrentRow.id},{emulateJSON:true}).then(function(res){
+                        this.$message({message:'删除成功！',type:'success'});
+                        window.location.reload();
+                    },function(res){
+                        this.$message('删除失败！');
+                    });
+                }).catch(() => {
+                        this.$message({
+                        type: 'info',
+                        message: '已取消删除'
+                    });
+                });
+            },
+            handleCurrentChange(val){
+                this.tableCurrentRow = val;
+            },
+            searchBtn(){
+                this.$http.post('/psi/goods/goodsIndexSearch.action',{data : JSON.stringify(this.formInline)},{emulateJSON:true}).then(function(res){
+                    this.invenTableData = JSON.parse(res.bodyText).data;
+                },function(res){
+                    this.$message('查询失败！');
+                });
+            },
+            formatterUnit(row, column, cellValue, index){
+                var result = null;
+                for(var i=0;i<this.goodsUnits.length;i++){
+                    if(this.goodsUnits[i].typeCode == cellValue){
+                        result = this.goodsUnits[i].typeName;
+                        break;
+                    }
+                }
+                return result;
+            },
+            formatterIsUse(row, column, cellValue, index){
+                var result = null;
+                for(var i=0;i<this.isUse.length;i++){
+                    if(this.isUse[i].typeCode == cellValue){
+                        result = this.isUse[i].typeName;
+                        break;
+                    }
+                }
+                return result;
+            }
+        }
+    });
+
+    /*界面渲染完后事件*/
+    vm.$nextTick(function(){
+        this.$http.post('/psi/goods/goodsIndexInit.action').then(function(res){
+            const initData = JSON.parse(res.bodyText);
+            this.types = initData.data.goodsType;
+            this.goodsUnits = initData.data.UNIT;
+            this.isUse = initData.data.YN;
+            this.invenTableData = initData.data.invenInitData;
+        },function(res){
+            this.$message('请重新进入界面！');
+        });
+    });
+</script>
+</html>
